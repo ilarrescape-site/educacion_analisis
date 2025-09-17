@@ -5,9 +5,7 @@ import pandas as pd
 import os
 
 
-load_dotenv()
-
-class Rol:
+class TituloSecundario:
     def __init__(self): 
         self.connection = mysql.connector.connect(
             host=os.getenv('DB_HOST'),
@@ -17,25 +15,12 @@ class Rol:
         )
         self.cursor = self.connection.cursor(dictionary=True)
         
-        
-
-    def fetch_data(self): 
+    def fetch_data(self):
         script_consulta = """
-        select 
-            r.id_rol,
-            r.nombre_rol
-        from rol r
-        """
-        self.cursor.execute(script_consulta)
-        result = self.cursor.fetchall()
-        return result
-    def fetch_data_directivo(self):
-        script_consulta = """
-        select 
-            r.id_rol,
-            r.nombre_rol
-        from rol r
-        Where r.nombre_rol = "Director" or r.nombre_rol = "Regente" or r.nombre_rol = "Secretario" or r.nombre_rol = "Preceptor"
+            select
+                ts.id_titulo_secundario,
+                ts.nombre_titulo_secundario 
+            from titulo_secundario ts
         """
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()

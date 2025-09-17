@@ -7,29 +7,18 @@ import os
 
 load_dotenv()
 
-#from archivo_rol import Rol
-#from archivo_direccion import Direccion
-
-# matricula_persona, 
-# nombre_persona, 
-# apellido_persona, 
-# dni_persona, 
-# fecha_nac_persona, 
-# genero_persona, 
-# email_persona, 
-# contraseña_persona, 
-# fk_direccion
-
-
-
 class Persona:
-    def __init__(self): 
+    def __init__(self):
+        #Utilizamos todas las credenciales de forma segura en el archivo .env para conectarnos a
+        # la base de datos.
         self.connection = mysql.connector.connect(
             host=os.getenv('DB_HOST'),
             user=os.getenv('DB_USER'),
             password=os.getenv('DB_PASSWORD'),
             database=os.getenv('DB_NAME')
         )
+        #El cursor me ayuda a especificar el formato base en el que se devuelven los datos.
+        #En este caso, es una lista de diccionarios.
         self.cursor = self.connection.cursor(dictionary=True)
         
         
@@ -66,6 +55,3 @@ class Persona:
         result = self.cursor.fetchall()
         return result
 
-
-objeto_persona = Persona()
-st.dataframe(objeto_persona.fetch_data())

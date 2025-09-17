@@ -26,6 +26,7 @@ class Pais:
                 p.nombre_pais 
             from pais p
         """
+
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()
         return result

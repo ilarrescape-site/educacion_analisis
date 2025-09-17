@@ -35,3 +35,22 @@ class Calle:
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()
         return result
+    
+    
+    def fectch_data_por_ciudad(self, id_ciudad):
+        script_consulta = """
+            select
+                ca.id_calle,
+                ca.nombre_calle, 
+                c.nombre_ciudad, 
+                pe.nombre_provincia, 
+                p.nombre_pais 
+            from calle ca
+            join ciudad_municipio c on ca.fk_ciudad = c.id_ciudad
+            join provincia_estado pe on c.fk_provincia = pe.id_provincia
+            join pais p on pe.fk_pais = p.id_pais
+            where ca.fk_ciudad = %s
+        """
+        self.cursor.execute(script_consulta,(id_ciudad,))
+        result = self.cursor.fetchall()
+        return result

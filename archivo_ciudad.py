@@ -33,4 +33,19 @@ class Ciudad:
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()
         return result
-    
+    def fetch_data_filtro_provincia (self, id_provincia):
+        script_filtro_ciudad_por_provincia= """
+            select
+                c.id_ciudad,
+                c.nombre_ciudad,
+                p.nombre_provincia
+            from
+                ciudad_municipio c
+            join
+                provincia_estado p on p.id_provincia = c.fk_provincia
+            where
+                p.id_provincia = %s
+        """
+        self.cursor.execute(script_filtro_ciudad_por_provincia,(id_provincia,))
+        result = self.cursor.fetchall()
+        return result

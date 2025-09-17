@@ -29,3 +29,17 @@ class ProvinciaEstado:
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()
         return result
+
+    def fetch_data_fitro_pais(self,id_pais_buscado):
+        script_filtro_persona ="""
+            select 
+                pe.id_provincia, 
+                pe.nombre_provincia, 
+                p.nombre_pais 
+            from provincia_estado pe
+            join pais p on pe.fk_pais = p.id_pais
+            where p.id_pais = %s
+        """
+        self.cursor.execute(script_filtro_persona,(id_pais_buscado,))
+        result = self.cursor.fetchall()
+        return result

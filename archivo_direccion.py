@@ -19,6 +19,20 @@ class Direccion:
         )
         self.cursor = self.connection.cursor(dictionary=True)
         
+    def insert_direccion(self, numero_direccion, departamento, fk_calle):
+        script_insert_direccion = """
+            insert into 
+                direccion (numero_direccion, departamento, fk_calle)
+                values
+                (
+                    %s, 
+                    %s, 
+                    %s
+                )
+        """
+        self.cursor.execute(script_insert_direccion,(numero_direccion,departamento,fk_calle))
+        self.connection.commit()
+
     def fetch_data(self):
         script_consulta = """
             select
@@ -38,9 +52,23 @@ class Direccion:
         result = self.cursor.fetchall()
         return result
 
-
-object_direccion = Direccion()
-
-df_direccion = pd.DataFrame(object_direccion.fetch_data())
-
-st.dataframe(df_direccion)
+    def fetch_direccion_por_calle(self, id_calle):
+        script_consulta = """
+            select
+                dir.id_direccion,
+                ca.nombre_calle, 
+                dir.numero_direccion,
+                dir.departamento,
+                c.nombre_ciudad, 
+                pe.nombre_provincia, 
+                p.nombre_pais
+            from direccion dir 
+            join calle ca on dir.fk_calle = ca.id_calle
+            join ciudad_municipio c on ca.fk_ciudad = c.id_ciudad
+            join provincia_estado pe on c.fk_provincia = pe.id_provincia
+            join pais p on pe.fk_pais = p.id_pais
+            where ca.id_calle = %s
+        """
+        self.cursor.execute(script_consulta,(id_calle,))
+        result = self.cursor.fetchall()
+        return result
