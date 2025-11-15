@@ -5,11 +5,11 @@ import pandas as pd
 import os
 
 
-from archivo_pais import Pais
-from archivo_provincia_estado import ProvinciaEstado
-from archivo_ciudad import Ciudad
+from ubicaciones.archivo_pais import Pais
+from ubicaciones.archivo_provincia_estado import ProvinciaEstado
+from ubicaciones.archivo_ciudad import Ciudad
 
-class Calle:
+class Direccion:
     def __init__(self): 
         self.connection = mysql.connector.connect(
             host=os.getenv('DB_HOST'),
@@ -19,15 +19,31 @@ class Calle:
         )
         self.cursor = self.connection.cursor(dictionary=True)
         
+    def insert_direccion(self, numero_direccion, departamento, fk_calle):
+        script_insert_direccion = """
+            insert into 
+                direccion (numero_direccion, departamento, fk_calle)
+                values
+                (
+                    %s, 
+                    %s, 
+                    %s
+                )
+        """
+        self.cursor.execute(script_insert_direccion,(numero_direccion,departamento,fk_calle))
+        self.connection.commit()
+
     def fetch_data(self):
         script_consulta = """
             select
-                ca.id_calle,
                 ca.nombre_calle, 
+                dir.numero_direccion,
+                dir.departamento,
                 c.nombre_ciudad, 
                 pe.nombre_provincia, 
-                p.nombre_pais 
-            from calle ca
+                p.nombre_pais
+            from direccion dir 
+            join calle ca on dir.fk_calle = ca.id_calle
             join ciudad_municipio c on ca.fk_ciudad = c.id_ciudad
             join provincia_estado pe on c.fk_provincia = pe.id_provincia
             join pais p on pe.fk_pais = p.id_pais
@@ -35,22 +51,24 @@ class Calle:
         self.cursor.execute(script_consulta)
         result = self.cursor.fetchall()
         return result
-    
-    
-    def fectch_data_por_ciudad(self, id_ciudad):
+
+    def fetch_direccion_por_calle(self, id_calle):
         script_consulta = """
             select
-                ca.id_calle,
+                dir.id_direccion,
                 ca.nombre_calle, 
+                dir.numero_direccion,
+                dir.departamento,
                 c.nombre_ciudad, 
                 pe.nombre_provincia, 
-                p.nombre_pais 
-            from calle ca
+                p.nombre_pais
+            from direccion dir 
+            join calle ca on dir.fk_calle = ca.id_calle
             join ciudad_municipio c on ca.fk_ciudad = c.id_ciudad
             join provincia_estado pe on c.fk_provincia = pe.id_provincia
             join pais p on pe.fk_pais = p.id_pais
-            where ca.fk_ciudad = %s
+            where ca.id_calle = %s
         """
-        self.cursor.execute(script_consulta,(id_ciudad,))
+        self.cursor.execute(script_consulta,(id_calle,))
         result = self.cursor.fetchall()
         return result

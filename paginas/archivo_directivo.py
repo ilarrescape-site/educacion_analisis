@@ -15,14 +15,14 @@ if 'cadena_direccion' not in st.session_state:
 
 load_dotenv()
 
-from archivo_persona import Persona
-from archivo_pais import Pais
-from archivo_provincia_estado import ProvinciaEstado
-from archivo_ciudad import Ciudad
-from archivo_calle import Calle
-from archivo_direccion import Direccion
-from archivo_rol import Rol
-from archivo_titulo_superior import TituloSuperior
+from paginas.archivo_persona import Persona
+from ubicaciones.archivo_pais import Pais
+from ubicaciones.archivo_provincia_estado import ProvinciaEstado
+from ubicaciones.archivo_ciudad import Ciudad
+from ubicaciones.archivo_calle import Calle
+from paginas.archivo_direccion import Direccion
+from paginas.archivo_rol import Rol
+from paginas.archivo_titulo_superior import TituloSuperior
 
 class Directivo(Persona):
     def __init__(self):
@@ -43,7 +43,7 @@ class Directivo(Persona):
             join rol r on r.id_rol = pr.fk_rol
             join directivo_has_titulo dht on dht.fk_matricula_directivo = dir.matricula_directivo
             join titulo_superior tsup on tsup.id_titulo = dht.fk_titulo
-            where r.nombre_rol = 'Director' or r.nombre_rol = 'Preceptor'
+            where r.nombre_rol = 'Director' or r.nombre_rol = 'Preceptor' or r.nombre_rol = 'Regente' or r.nombre_rol = 'Secretario'
             order by p.nombre_persona
         """
 
@@ -52,16 +52,16 @@ class Directivo(Persona):
 
     def add_data(self, matricula_persona, nombre_persona, apellido_persona, dni_persona, fecha_nac_persona, genero_persona, email_persona, contraseña_persona, fk_direccion, rol, titulo):
         script_insert_persona = """
-            insert into 
+            insert into
                 persona (
-                    matricula_persona, 
-                    nombre_persona, 
-                    apellido_persona, 
-                    dni_persona, 
-                    fecha_nac_persona, 
-                    genero_persona, 
-                    email_persona, 
-                    contraseña_persona, 
+                    matricula_persona,
+                    nombre_persona,
+                    apellido_persona,
+                    dni_persona,
+                    fecha_nac_persona,
+                    genero_persona,
+                    email_persona,
+                    contraseña_persona,
                     fk_direccion
                 )
                 values
@@ -78,12 +78,12 @@ class Directivo(Persona):
                     )
         """
         self.cursor.execute(script_insert_persona, (matricula_persona, nombre_persona, apellido_persona, dni_persona, fecha_nac_persona, genero_persona, email_persona, contraseña_persona, fk_direccion))
-        
+
         script_insert_directivo = """
             Insert into directivo (matricula_directivo) values (%s)
         """
         self.cursor.execute(script_insert_directivo,(matricula_persona,))
-        
+
         script_insert_rol = """
             insert into persona_has_rol (fk_matricula_persona, fk_rol) values(%s,%s)
         """
@@ -93,7 +93,7 @@ class Directivo(Persona):
             insert into directivo_has_titulo (fk_matricula_directivo, fk_titulo) values(%s,%s)
         """
         self.cursor.execute(script_insert_titulo,(matricula_persona,titulo))
-        
+
         self.connection.commit()
 
 
@@ -104,33 +104,51 @@ class ComponentesDirectivo:
         self.db_provincia = ProvinciaEstado()
         self.db_ciudad = Ciudad()
         self.db_calle = Calle()
-        self.db_direccion = Direccion() 
+        self.db_direccion = Direccion()
         self.db_rol = Rol()
         self.db_tsup = TituloSuperior()
 
     def diplay_data_components(self):
         _contenedor_tabla_directivo = st.container(border= True)
-        
+
         data_directivo = self.db_directivo.fetch_data()
+        data_directivo = pd.DataFrame(data_directivo)
+
+
         with _contenedor_tabla_directivo:
             st.write('#### Tabla de Directivos')
-            st.dataframe(data_directivo,
-                        height=600,
-                        use_container_width= True,
-                        selection_mode = 'single-row',
-                        on_select='rerun'
-                        )
+            
+            nombre_buscado = st.text_input('Buscar por Nombre: ')
+
+            data_directivo = data_directivo[data_directivo['Nombre'].str.contains(nombre_buscado, case=False, na=False)]
+
+            diccionario_directivo_seleccionado = st.dataframe(data_directivo,
+                                                        height=500,
+                                                        use_container_width= True,
+                                                        selection_mode = 'single-row',
+                                                        on_select='rerun',
+                                                        hide_index= True
+                                                        )
+            indice = diccionario_directivo_seleccionado['selection']['rows'][0] if diccionario_directivo_seleccionado['selection']['rows'] else None
+            
+
+            #Ver la clase 14/10
+            serie_seleccionada = data_directivo.loc[indice] if indice!=None else None
+            
+
+
+            st.write(serie_seleccionada)
         return data_directivo
-    
+
     @st.dialog('Seleccionar Direccion')
     def seleccionar_direccion(self,lista_calles, diccionario_calles, calle_seleccionada,df_direcciones):
-        diccionario_seleccionado = st.dataframe(df_direcciones,
+        diccionario_directivo_seleccionado = st.dataframe(df_direcciones,
                                             column_order=['nombre_calle','numero_direccion','departamento'],
                                             hide_index=True,
                                             selection_mode='single-row',
                                             on_select='rerun')
-        
-        indice_seleccion = diccionario_seleccionado['selection']['rows'][0] if len(diccionario_seleccionado['selection']['rows'])>0 else None
+
+        indice_seleccion = diccionario_directivo_seleccionado['selection']['rows'][0] if len(diccionario_directivo_seleccionado['selection']['rows'])>0 else None
         if indice_seleccion != None:
             serie_direccion_seleccionada = df_direcciones.loc[indice_seleccion]
             id_seleccionado = serie_direccion_seleccionada.loc['id_direccion']
@@ -146,10 +164,10 @@ class ComponentesDirectivo:
                 st.rerun()
         else:
             st.warning('No se seleccionó ningún elemento')
-    
+
     @st.dialog('Agregar Dirección',width='small')
     def agregar_direccion(self, diccionario_calles, df_direcciones, calle_seleccionada):
-        
+
         st.dataframe(df_direcciones,
                         column_order = ['nombre_calle','numero_direccion','departamento'],
                         hide_index=True)
@@ -186,7 +204,7 @@ class ComponentesDirectivo:
                 nombre_directivo = st.text_input("Ingresar Nombre: ", max_chars = 45)
             with _columna_apellido:
                 apellido_directivo = st.text_input("Ingresar Apellido: ", max_chars = 45)
-            
+
             _columna_dni,_columna_nacimiento,_columna_genero = st.columns([3,4,2])
             with _columna_dni:
                 dni_directivo = st.number_input("DNI: ", step=100)
@@ -195,28 +213,28 @@ class ComponentesDirectivo:
             with _columna_genero:
                 lista_genero = ['M','F','O']
                 genero_persona = st.selectbox("Género: ", lista_genero)
-            
+
             email_persona = st.text_input("Correo Electrónico: ")
-            
+
             _columna_contraseña, _columna_confirmar = st.columns(2)
             with _columna_contraseña:
                 contraseña_persona = st.text_input("Ingrese Contraseña: ", type="password")
             with _columna_confirmar:
                 confirmar_contraseña_persona = st.text_input("Confirmar Contraseña: ", type="password")
-            
+
             _columa_pais, _columna_provincia = st.columns(2)
 
             with _columa_pais:
                 lista_diccionario_pais = self.db_pais.fetch_data()
-                
+
                 # diccionario_paises = {}
                 # for i in lista_diccionario_pais:
                 #     diccionario_paises.update({i['nombre_pais']:i['id_pais']})
 
                 # st.write(diccionario_paises)
-                
+
                 diccionario_pais = {diccionario['nombre_pais']: diccionario['id_pais'] for diccionario in lista_diccionario_pais}
-                
+
 
                 lista_paises = list(diccionario_pais.keys())
 
@@ -229,7 +247,7 @@ class ComponentesDirectivo:
                 lista_diccionario_provincias = self.db_provincia.fetch_data_fitro_pais(id_pais)
 
                 diccionario_provincia = {diccionario['nombre_provincia']:diccionario['id_provincia'] for diccionario in lista_diccionario_provincias}
-                
+
                 lista_provincia = list(diccionario_provincia.keys())
 
                 provincia_persona = st.selectbox("Provincia o Estado: ", lista_provincia)
@@ -237,14 +255,14 @@ class ComponentesDirectivo:
                 id_provincia_buscada = diccionario_provincia[provincia_persona] if provincia_persona !=None else None
 
             _columna_ciudad, _columna_calle = st.columns([3,3])
-            
+
 
             #Acá me quedé la última clase
             with _columna_ciudad:
                 lista_diccionario_ciudades = self.db_ciudad.fetch_data_filtro_provincia(id_provincia_buscada)
 
                 diccionario_ciudades = {diccionario['nombre_ciudad']:diccionario['id_ciudad'] for diccionario in lista_diccionario_ciudades}
-            
+
                 lista_ciudades = list(diccionario_ciudades.keys())
 
                 ciudad_seleccionada = st.selectbox("Ciudad: ", lista_ciudades)
@@ -252,9 +270,9 @@ class ComponentesDirectivo:
                 id_ciudad = diccionario_ciudades[ciudad_seleccionada] if ciudad_seleccionada != None else None
 
             with _columna_calle:
-                lista_diccionario_calles = self.db_calle.fectch_data_por_ciudad(id_ciudad)
+                lista_diccionario_calles = self.db_calle.fetch_data_por_ciudad(id_ciudad)
                 diccionario_calles = {diccionario['nombre_calle']:diccionario['id_calle'] for diccionario in lista_diccionario_calles}
-                
+
                 lista_calles = list(diccionario_calles.keys())
                 calle_seleccionada = st.selectbox('Calle: ', lista_calles)
 
@@ -279,7 +297,7 @@ class ComponentesDirectivo:
                 else:
                     st.write('###### ⚠️ No tiene una direccion seleccionada.')
             st.write('---')
-            
+
             _columna_titulos, _columna_roles = st.columns(2)
 
             with _columna_titulos:
@@ -305,7 +323,7 @@ class ComponentesDirectivo:
             # La matrícula va a ser una combinación de las tres primeras letras del nombre, las tres primeras letras del apellido
             # y los 6 últimos dígitos del dni
             _columna_relleno, _columna_guardar_datos = st.columns(2)
-            
+
             with _columna_guardar_datos:
                 if st.button('Guardar Directivo', use_container_width= True):
                     cadena_dni_directivo = str(dni_directivo)
@@ -320,6 +338,8 @@ class ComponentesDirectivo:
                             elif contraseña_persona == None and confirmar_contraseña_persona == None:
                                 self.db_directivo.add_data(matricula_directivo, nombre_directivo, apellido_directivo, dni_directivo, fecha_nacimiento_persona, genero_persona, email_persona, contraseña_persona, st.session_state['id_direccion'], id_rol, id_titulo)
                                 st.success('Directivo Guardado')
+                                time.sleep(1.5)
+                                st.rerun()
                         else:
                             st.error('Falta una direccion')
                     else:

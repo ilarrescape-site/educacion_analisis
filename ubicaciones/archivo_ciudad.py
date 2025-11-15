@@ -5,8 +5,8 @@ import pandas as pd
 import os
 
 
-from archivo_pais import Pais
-from archivo_provincia_estado import ProvinciaEstado
+from ubicaciones.archivo_pais import Pais
+from ubicaciones.archivo_provincia_estado import ProvinciaEstado
 
 
 class Ciudad:
@@ -49,3 +49,6 @@ class Ciudad:
         self.cursor.execute(script_filtro_ciudad_por_provincia,(id_provincia,))
         result = self.cursor.fetchall()
         return result
+
+def main_ciudad():
+    st.info('Acá van las ciudades')

@@ -7,7 +7,7 @@ import os
 
 load_dotenv()
 
-from archivo_persona import Persona
+from pages.archivo_persona import Persona
 
 class Alumno(Persona):
     def __init__(self):
